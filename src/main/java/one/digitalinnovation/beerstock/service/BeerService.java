@@ -3,9 +3,7 @@ package one.digitalinnovation.beerstock.service;
 import lombok.AllArgsConstructor;
 import one.digitalinnovation.beerstock.dto.BeerDTO;
 import one.digitalinnovation.beerstock.entity.Beer;
-import one.digitalinnovation.beerstock.exception.BeerAlreadyRegisteredException;
-import one.digitalinnovation.beerstock.exception.BeerNotFoundException;
-import one.digitalinnovation.beerstock.exception.BeerStockExceededException;
+import one.digitalinnovation.beerstock.exception.*;
 import one.digitalinnovation.beerstock.mapper.BeerMapper;
 import one.digitalinnovation.beerstock.repository.BeerRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -68,5 +66,18 @@ public class BeerService {
             return beerMapper.toDTO(incrementedBeerStock);
         }
         throw new BeerStockExceededException(id, quantityToIncrement);
+    }
+
+    public  BeerDTO decrement(Long id, int quantityToDecrement) throws BeerNotFoundException, BeerStockBelowZeroException, BeerStockIsZeroException {
+        Beer beerToDecrementStock = verifyIfExists(id);
+        int currentBeerQuantity = beerToDecrementStock.getQuantity();
+        if(currentBeerQuantity==0) throw new BeerStockIsZeroException(id);
+        int quantityAfterDecrement = currentBeerQuantity-quantityToDecrement;
+        if(quantityAfterDecrement>=0){
+            beerToDecrementStock.setQuantity(quantityAfterDecrement);
+            Beer decrementedBeerStock = beerRepository.save(beerToDecrementStock);
+            return BeerMapper.INSTANCE.toDTO(decrementedBeerStock);
+        }
+        throw  new BeerStockBelowZeroException(id, quantityToDecrement);
     }
 }
